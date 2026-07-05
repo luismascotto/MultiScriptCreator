@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-var ConfigCommandLine = new ConfigurationBuilder()
-                            .AddCommandLine(args, new Dictionary<string, string>()
+// ScriptCreator [ script | list ]
+var argsConfig = new ConfigurationBuilder()
+                            .AddCommandLine(args[1..], new Dictionary<string, string>()
                             {
                                 { "-d", "d" },
                                 { "-s", "s" },
@@ -11,21 +12,24 @@ var ConfigCommandLine = new ConfigurationBuilder()
 
 
 
-string databasesFilePath = "databases.txt";
-string scriptFilePath = "script.sql";
-string outputFilePath = "output.sql";
+string databasesFilePath = argsConfig["d"]?.Trim() ?? "databases.txt";
+string scriptFilePath = argsConfig["s"]?.Trim() ?? "script.sql";
+string outputFilePath = argsConfig["o"]?.Trim() ?? "output.sql";
 
-if (!string.IsNullOrWhiteSpace(ConfigCommandLine["d"]))
+if (File.Exists(databasesFilePath))
 {
-    databasesFilePath = ConfigCommandLine["d"]!;
+    Console.WriteLine("Databases file not found.");
+    return;
 }
-if (!string.IsNullOrWhiteSpace(ConfigCommandLine["s"]))
+if (File.Exists(scriptFilePath))
 {
-    scriptFilePath = ConfigCommandLine["s"]!;
+    Console.WriteLine("Script file not found.");
+    return;
 }
-if (!string.IsNullOrWhiteSpace(ConfigCommandLine["o"]))
+if (Path.GetDirectoryName(outputFilePath) is string outputDir && !Directory.Exists(outputDir))
 {
-    outputFilePath = ConfigCommandLine["o"]!;
+    Console.WriteLine("Output directory not found.");
+    return;
 }
 
 try
@@ -33,35 +37,39 @@ try
     ReadOnlySpan<char> databasesSpan = File.ReadAllText(databasesFilePath).AsSpan();
     string scriptContent = File.ReadAllText(scriptFilePath);
 
-    using (var outputFile = new StreamWriter(outputFilePath))
+    var outputFile = new StreamWriter(outputFilePath, false);
+    int iCount = 1;
+    while (!databasesSpan.IsEmpty)
     {
-        int iCount = 1;
-        while (!databasesSpan.IsEmpty)
+        int newlineIndex = databasesSpan.IndexOf('\n');
+        if (newlineIndex == -1)
         {
-            int newlineIndex = databasesSpan.IndexOf('\n');
-            if (newlineIndex == -1)
-            {
-                newlineIndex = databasesSpan.Length;
-            }
-
-            ReadOnlySpan<char> database = databasesSpan[..newlineIndex].Trim();
-            if (!database.IsEmpty)
-            {
-                outputFile.WriteLine($"-- START({iCount})------------------------------------------------------------");
-                outputFile.WriteLine($"USE {database}");
-                outputFile.WriteLine("GO");
-                outputFile.WriteLine();
-                outputFile.WriteLine(scriptContent);
-                outputFile.WriteLine("GO");
-                outputFile.WriteLine($"--   END({iCount})------------------------------------------------------------");
-                outputFile.WriteLine();
-            }
-            databasesSpan = databasesSpan[(newlineIndex + 1)..];
-            iCount++;
+            newlineIndex = databasesSpan.Length;
         }
+
+        ReadOnlySpan<char> database = databasesSpan[..newlineIndex].Trim();
+        if (!database.IsEmpty)
+        {
+            outputFile.Write("-- START(");
+            outputFile.Write(iCount);
+            outputFile.WriteLine(")------------------------------------------------------------");
+            outputFile.Write("USE ");
+            outputFile.WriteLine(database);
+            outputFile.WriteLine("GO");
+            outputFile.WriteLine();
+            outputFile.WriteLine(scriptContent);
+            outputFile.WriteLine("GO");
+            outputFile.Write("--   END(");
+            outputFile.Write(iCount);
+            outputFile.WriteLine(")------------------------------------------------------------");
+            outputFile.WriteLine();
+        }
+        databasesSpan = databasesSpan[(newlineIndex + 1)..];
+        iCount++;
     }
 
-    Console.WriteLine($"{outputFilePath} file created successfully.");
+    Console.Write(outputFilePath);
+    Console.WriteLine(" file created successfully.");
 }
 catch (Exception ex)
 {
