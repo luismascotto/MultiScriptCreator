@@ -1,3 +1,4 @@
+using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 using MultiScriptHelper.Model;
@@ -7,7 +8,7 @@ namespace MultiScriptHelper.Ms;
 public class MultiScript
 {
     private const int _XML_NODE_SIZE = 256;
-    private const string _XML_COMMENT = "\nSQL Multi Script\nSQL Multi Script\nVersion:1.4.12.1269"
+    private const string _XML_COMMENT = "\nSQL Multi Script\nSQL Multi Script\nVersion:1.4.12.1269";
     //public List<Database> Databases { get; set; }
     //public StringBuilder strL { get; set; }
 

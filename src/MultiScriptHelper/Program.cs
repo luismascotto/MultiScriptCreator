@@ -92,7 +92,7 @@ return;
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-internal static void ReadFile(FileInfo file, int delay, ConsoleColor fgColor, bool lightMode)
+static void ReadFile(FileInfo file, int delay, ConsoleColor fgColor, bool lightMode)
 {
     Console.BackgroundColor = lightMode ? ConsoleColor.White : ConsoleColor.Black;
     Console.ForegroundColor = fgColor;
@@ -102,14 +102,14 @@ internal static void ReadFile(FileInfo file, int delay, ConsoleColor fgColor, bo
         Thread.Sleep(TimeSpan.FromMilliseconds(delay * line.Length));
     }
 }
-internal static void DeleteFromFile(FileInfo file, string[] searchTerms)
+static void DeleteFromFile(FileInfo file, string[] searchTerms)
 {
     Console.WriteLine("Deleting from file");
 
     var lines = File.ReadLines(file.FullName).Where(line => searchTerms.All(s => !line.Contains(s)));
     File.WriteAllLines(file.FullName, lines);
 }
-internal static void AddToFile(FileInfo file, string quote, string byline)
+static void AddToFile(FileInfo file, string quote, string byline)
 {
     Console.WriteLine("Adding to file");
 
